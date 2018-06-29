@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link href="https://cdn.bootcss.com/leaflet/1.3.1/leaflet.css" rel="stylesheet">
+    <style>
+        .upload{
+            padding: 4px 10px;
+            height: 20px;
+            line-height: 20px;
+            position: relative;
+            border: 1px solid #999;
+            text-decoration: none;
+            color: #666;
+            margin-left: 20px;
+            top: 8px;
+        }
+        .excel-file{
+            position: absolute;
+            overflow: hidden;
+            right: 0;
+            top: 0;
+            opacity: 0;
+        }
+        .map{
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a href="javascript:;" class="upload">选择文件
+        <input class="excel-file" type="file" multiple="multiple" />
+    </a>
+    <div id="map" style="width: 1200px; height: 800px;" class="map"></div>
+</body>
+<script src="js/xlsx.core.min.js"></script>
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="https://cdn.bootcss.com/leaflet/1.3.1/leaflet-src.js"></script>
+<script>
+    //地图处理
+    var map = L.map('map').setView([39.9, 116.39], 8);
+    L.tileLayer('http://218.247.138.119:6670/seis/v3/wmts_rest/service/19/2/24/TDTCRS84Quad/{z}/{x}/{y}.jpg', {
+        attribution: '&copy;'
+    }).addTo(map);
+    L.marker([39.9, 116.39]).addTo(map)
+        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+        .openPopup();
+</script>
+<script>
+    //文件处理
+    $(".excel-file").on('change',function(e) {
+        var getPigmentCodeData = new Array();
+
+        var files = e.target.files;
+        var persons = [];
+        var fileReader = new FileReader();
+        fileReader.onload = function(ev) {
+            try {
+                var data = ev.target.result,
+                    workbook = XLSX.read(data, {
+                        type: 'binary'
+                    }),
+                    // 以二进制流方式读取得到整份excel表格对象
+                    persons = []; // 存储获取到的数据
+            } catch(e) {
+                console.log('文件类型不正确');
+                return;
+            }
+
+            // 表格的表格范围，可用于判断表头是否数量是否正确
+            var fromTo = '';
+            // 遍历每张表读取
+            for (var sheet in workbook.Sheets) {
+                if (workbook.Sheets.hasOwnProperty(sheet)) {
+                    fromTo = workbook.Sheets[sheet]['!ref'];
+                    console.log(fromTo + "fromTo"); //表有几行数据
+                    persons = persons.concat(XLSX.utils.sheet_to_json(workbook.Sheets[sheet]));
+                    break; // 如果只取第一张表，就取消注释这行
+                }
+            }
+
+            if (persons.length == 0) {
+                alert("文件为空");
+            }
+            var errorMes = "";
+
+            console.log(JSON.stringify(persons))
+
+        };
+
+        var headStr ='adds';
+        for (var i = 0; i < persons.length; i++) {
+            debugger
+            if (Object.keys(persons[i]).join(',') !== headStr) {
+                persons.splice(i, 1);
+            }
+        }
+
+        // 以二进制方式打开文件
+        fileReader.readAsBinaryString(files[0]);
+    });
+
+</script>
+</html>
